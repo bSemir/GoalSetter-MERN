@@ -1,8 +1,58 @@
-import React from 'react'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import GoalForm from '../components/GoalForm'
+import GoalItem from '../components/GoalItem'
+import Spinner from '../components/Spinner'
+import {getGoals} from '../features/goals/goalSlice'
+import {reset} from '../features/auth/authSlice'
 
 function Dashboard() {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const { user } = useSelector((state) => state.auth)
+  const {goals, isLoading, isError, message} = useSelector((state) => state.goals)
+
+  useEffect(() => {
+    if(isError){
+      console.log(message);
+    }
+    // ako user nije logovan
+    if (!user) {
+      navigate('/login');
+    }
+
+    dispatch(getGoals());
+
+    //when we want to do something when the component unmounts, then we just return from useEffect
+    return () => {
+      dispatch(reset())
+    }
+  }, [user, navigate, isError, message, dispatch])
+
+  if(isLoading){
+    return <Spinner />
+  }
+
   return (
-    <div>Dashboard</div>
+    <>
+      <section className='heading'>
+        <h1>Welcome {user && user.name}</h1>
+        <p>Goals Dashboard</p>
+      </section>
+      <GoalForm></GoalForm>
+
+      <section className="content">
+        {goals.length > 0 ? (
+          <div className="goals">
+            {goals.map((goal) => ( 
+            <GoalItem key={goal._id} goal={goal} />
+           ))}
+          </div>
+        ) : (<h3>You have not set any goals </h3>)}
+      </section>
+    </>
   )
 }
 
